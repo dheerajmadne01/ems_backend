@@ -1,0 +1,79 @@
+import PunchRepository from "../repositories/punch.repo";
+import EmployeeRepository from "../repositories/employee.repo";
+import AdminRepository from "../repositories/admin.repo";
+import { metersBetween } from "../utils/distance";
+import PunchInterface from "../interfaces/punch.interface";
+
+class PunchService {
+  private punchRepo = new PunchRepository();
+  private empRepo = new EmployeeRepository();
+  private adminRepo = new AdminRepository();
+
+  async punch(payload: PunchInterface) {
+    const emp = await this.empRepo.findById(payload.employee_id);
+    if (!emp) throw new Error("Employee not found");
+
+    const adminId = emp.admin_id;
+    const admin = await this.adminRepo.findById(adminId);
+    if (!admin) throw new Error("Company location not found");
+
+    const lat = Number(payload.lat);
+    const lng = Number(payload.lng);
+    const companyLat = admin.company_lat;
+    const companyLng = admin.company_lng;
+    const radius = admin.range_in_meter || 200;
+    let distance = 0;
+    let within = false;
+
+    if (
+      companyLat != null &&
+      companyLng != null &&
+      !isNaN(lat) &&
+      !isNaN(lng)
+    ) {
+      distance = metersBetween(
+        Number(companyLat),
+        Number(companyLng),
+        lat,
+        lng
+      );
+      const radius = Math.max(admin.range_in_meter || 200, 200);
+      within = distance <= radius;
+    }
+
+    if (!within) {
+      return { warning: "Outside geofence" };
+    }
+
+    const punchData: any = {
+      employee_id: payload.employee_id,
+      admin_id: adminId,
+      type: payload.type.toUpperCase(),
+      lat,
+      lng,
+      distance_from_office: Math.round(distance),
+      geofence_passed: within,
+      source: payload.source || "mobile",
+      note: payload.note || null,
+    };
+
+    if (payload.type.toUpperCase() === "IN") {
+      punchData.punch_in_time = new Date();
+    } else if (payload.type.toUpperCase() === "OUT") {
+      punchData.punch_out_time = new Date();
+    }
+
+    const created = await this.punchRepo.create(punchData);
+    return { created };
+  }
+
+  async listPunch(employee_id: string) {
+    return this.punchRepo.findLastPunch(employee_id);
+  }
+
+  async listAllPunch(employee_id: string) {
+    return this.punchRepo.listByEmployee(employee_id);
+  }
+}
+
+export default PunchService;

@@ -1,5 +1,9 @@
 import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
+import fs from 'fs';
 import { config } from '../config/db';
+
+dotenv.config();
 
 const sequelize = new Sequelize(
   config.database.database as string,
@@ -9,16 +13,24 @@ const sequelize = new Sequelize(
     host: config.database.host,
     port: Number(config.database.port),
     dialect: 'mysql',
+
     dialectOptions: {
       connectTimeout: 20000,
+
+      // ✅ SSL support (for production / cloud DB)
+      ssl: {
+        ca: fs.readFileSync('/etc/ssl/certs/ca-certificates.crt'),
+      },
     },
+
     pool: {
       max: 5,
       min: 0,
       acquire: 30000,
       idle: 10000,
     },
-    logging: false
+
+    logging: false,
   }
 );
 

@@ -1,11 +1,11 @@
 import UserInterface from "../interfaces/auth.interface";
-import UserModel from "../models/auth.model";
+import AdminModel from "../models/admin.model";
 
 class UserRepository {
   private userModel: any;
 
   constructor() {
-    this.userModel = UserModel;
+    this.userModel = AdminModel;
   }
 
   async createUser(data: UserInterface) {

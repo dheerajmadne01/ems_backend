@@ -23,9 +23,16 @@ PunchModel.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    employee_id: { type: DataTypes.UUID, allowNull: false },
-    admin_id: { type: DataTypes.UUID, allowNull: true },
-    type: { type: DataTypes.STRING, allowNull: false },
+    employee_id: {
+      type: DataTypes.UUID,
+      allowNull: false,
+    },
+    admin_id: { 
+      type: DataTypes.UUID,
+       allowNull: true 
+      },
+    type: { 
+      type: DataTypes.STRING, allowNull: false },
     lat: { type: DataTypes.DOUBLE, allowNull: true },
     lng: { type: DataTypes.DOUBLE, allowNull: true },
     punch_in_time: { type: DataTypes.DATE, allowNull: true },

@@ -58,7 +58,7 @@ class EmployeeService {
   }
 
   async findById(id: string) {
-    return this.repo.findById(id);
+    return this.repo.findById(id);  
   }
   async listEmployeesLeaves(admin_id: string) {
     const employees = await this.repo.listByAdmin(admin_id);

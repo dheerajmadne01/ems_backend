@@ -3,8 +3,8 @@ import EmployeeRepository from "../repositories/employee.repo";
 import { sendMail } from "../utils/sendMail";
 
 class LeaveService {
-  private repo = new LeaveRepository();
-  private employeeRepo = new EmployeeRepository();
+   repo = new LeaveRepository();
+   employeeRepo = new EmployeeRepository();
 
   async applyLeave(payload: any) {
     const start = new Date(payload.start_date);

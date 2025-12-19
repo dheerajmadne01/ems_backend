@@ -51,7 +51,7 @@ export const sendMail = async (to: string, subject: string, html: string) => {
       to,
       from: {
         email: process.env.SENDGRID_FROM_EMAIL as string,
-        name: "Employee Management System",   // 👈 optional
+        name: "Employee Management System",   
       },
       subject,
       html,

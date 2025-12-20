@@ -33,6 +33,10 @@ class EmployeeController {
         message:
           body.type.toUpperCase() === "OUT"
             ? "Punch out recorded"
+            : body.type.toUpperCase() === "BREAK_IN"
+            ? "Break started"
+            : body.type.toUpperCase() === "BREAK_OUT"
+            ? "Break ended"
             : "Punch in recorded",
         data: res.created,
       });

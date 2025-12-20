@@ -62,6 +62,11 @@ class PunchService {
     } else if (payload.type.toUpperCase() === "OUT") {
       punchData.punch_out_time = new Date();
     }
+    else if (payload.type.toUpperCase() === "BREAK_START") {
+      punchData.break_start_time = new Date();
+    } else if (payload.type.toUpperCase() === "BREAK_END") {
+      punchData.break_end_time = new Date();
+    }
 
     const created = await this.punchRepo.create(punchData);
     return { created };

@@ -13,7 +13,13 @@ class PunchRepository {
       where: { employee_id },
       order: [["created_at", "DESC"]],
       limit: 8,
-      attributes: { exclude: ["employee_id","created_at","updated_at"] },
+    });
+  }
+
+  async listAllByEmployee(employee_id: string) {
+    return this.model.findAll({
+      where: { employee_id },
+      order: [["created_at", "DESC"]],
     });
   }
 

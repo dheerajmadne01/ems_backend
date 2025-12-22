@@ -6,9 +6,9 @@ import LeaveRepository from "../repositories/leave.repo";
 import PunchRepository from "../repositories/punch.repo";
 
 class EmployeeService {
-  repo = new EmployeeRepository();
-  punchRepo = new PunchRepository();
-  leaveRepo = new LeaveRepository();
+  public repo = new EmployeeRepository();
+  public punchRepo = new PunchRepository();
+  public leaveRepo = new LeaveRepository();
   constructor() {
     this.repo = new EmployeeRepository();
     this.punchRepo = new PunchRepository();
@@ -58,7 +58,7 @@ class EmployeeService {
   }
 
   async findById(id: string) {
-    return this.repo.findById(id);  
+    return this.repo.findById(id);
   }
   async listEmployeesLeaves(admin_id: string) {
     const employees = await this.repo.listByAdmin(admin_id);
@@ -74,14 +74,60 @@ class EmployeeService {
 
     return employeesDetailed;
   }
+
   async listEmployeespunches(admin_id: string) {
     const employees = await this.repo.listByAdmin(admin_id);
+    const expectedStartTime = 12;
     const employeesDetailed = await Promise.all(
       employees.map(async (emp) => {
-        const punches = await this.punchRepo.listByEmployee(emp?.id);
+        const punches = await this.punchRepo.listAllByEmployee(emp?.id);
+        const dateStatusMap = new Map<
+          string,
+          { status: string; isLate: boolean }
+        >();
+        punches.forEach((punch: any) => {
+          const punchData = punch.dataValues || punch;
+          const punchDate = new Date(
+            punchData.punch_in_time || punchData.created_at
+          );
+          const dateKey = punchDate.toISOString().split("T")[0];
+
+          if (punchData.type === "IN") {
+            const punchInTime = new Date(
+              punchData.punch_in_time || punchData.created_at
+            );
+            const punchInHour = punchInTime.getHours();
+            const punchInMinutes = punchInTime.getMinutes();
+
+            const isLate =
+              punchInHour > expectedStartTime ||
+              (punchInHour === expectedStartTime && punchInMinutes > 0);
+
+            dateStatusMap.set(dateKey, {
+              status: "present",
+              isLate: isLate,
+            });
+          }
+        });
+
+        const punchesWithStatus = punches.map((punch: any) => {
+          const punchData = punch.dataValues || punch;
+          const punchDate = new Date(
+            punchData.punch_in_time || punchData.created_at
+          );
+          const dateKey = punchDate.toISOString().split("T")[0];
+          const dateStatus = dateStatusMap.get(dateKey);
+
+          return {
+            ...punchData,
+            status: dateStatus?.status || "absent",
+            isLate: dateStatus?.isLate || false,
+          };
+        });
+
         return {
           ...emp?.dataValues,
-          punches,
+          punches: punchesWithStatus,
         };
       })
     );

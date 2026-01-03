@@ -76,13 +76,14 @@ class EmployeeController {
   allEmpPunches = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
       const adminid = (req.user as any).id as string;
+         const { date } = req.query as { date?: string };
       if (!adminid) {
         return reply.status(401).send({
           status_code: 401,
           message: "Unauthorized - invalid token",
         });
       }
-      const data = await this.employeservice.listEmployeespunches(adminid);
+      const data = await this.employeservice.listEmployeespunches(adminid,date);
       reply.send({ status_code: 200, data });
     } catch (err: any) {
       reply.status(500).send({ status_code: 500, message: err.message });

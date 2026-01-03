@@ -1,6 +1,7 @@
 import PunchRepository from "../repositories/punch.repo";
 import EmployeeRepository from "../repositories/employee.repo";
 import AdminRepository from "../repositories/admin.repo";
+import NotificationService from "./notification.service";
 import { metersBetween } from "../utils/distance";
 import PunchInterface from "../interfaces/punch.interface";
 
@@ -8,6 +9,7 @@ class PunchService {
   private punchRepo = new PunchRepository();
   private empRepo = new EmployeeRepository();
   private adminRepo = new AdminRepository();
+  private notificationService = new NotificationService();
 
   async punch(payload: PunchInterface) {
     const emp = await this.empRepo.findById(payload.employee_id);
@@ -69,6 +71,36 @@ class PunchService {
     }
 
     const created = await this.punchRepo.create(punchData);
+
+    // Send notification to ADMIN when employee punches IN
+    if (payload.type.toUpperCase() === "IN") {
+      try {
+        const employee = await this.empRepo.findById(payload.employee_id);
+        if (employee && adminId) {
+          await this.notificationService.createAndSendNotification(
+            {
+              title: "New Punch In",
+              message: `${employee.name} has punched in`,
+              type: "PUNCH_IN",
+              sender_user_id: payload.employee_id,
+              receiver_user_id: adminId,
+            },
+            "New Punch In",
+            `${employee.name} has punched in`,
+            {
+              type: "PUNCH_IN",
+              employee_id: payload.employee_id,
+              employee_name: employee.name,
+              punch_id: created.id,
+            }
+          );
+        }
+      } catch (error: any) {
+        // Log error but don't break the punch operation
+        console.error("Error sending punch-in notification:", error.message);
+      }
+    }
+
     return { created };
   }
 

@@ -75,65 +75,79 @@ class EmployeeService {
     return employeesDetailed;
   }
 
-  async listEmployeespunches(admin_id: string) {
-    const employees = await this.repo.listByAdmin(admin_id);
-    const expectedStartTime = 12;
-    const employeesDetailed = await Promise.all(
-      employees.map(async (emp) => {
-        const punches = await this.punchRepo.listAllByEmployee(emp?.id);
-        const dateStatusMap = new Map<
-          string,
-          { status: string; isLate: boolean }
-        >();
-        punches.forEach((punch: any) => {
+async listEmployeespunches(admin_id: string, date?: string) {
+  const employees = await this.repo.listByAdmin(admin_id);
+  const expectedStartTime = 12;
+
+  const selectedDate = date;
+
+  const employeesDetailed = await Promise.all(
+    employees.map(async (emp) => {
+      let punches = await this.punchRepo.listAllByEmployee(emp?.id);
+
+      if (selectedDate) {
+        punches = punches.filter((punch: any) => {
           const punchData = punch.dataValues || punch;
           const punchDate = new Date(
             punchData.punch_in_time || punchData.created_at
           );
-          const dateKey = punchDate.toISOString().split("T")[0];
 
-          if (punchData.type === "IN") {
-            const punchInTime = new Date(
-              punchData.punch_in_time || punchData.created_at
-            );
-            const punchInHour = punchInTime.getHours();
-            const punchInMinutes = punchInTime.getMinutes();
-
-            const isLate =
-              punchInHour > expectedStartTime ||
-              (punchInHour === expectedStartTime && punchInMinutes > 0);
-
-            dateStatusMap.set(dateKey, {
-              status: "present",
-              isLate: isLate,
-            });
-          }
+          const punchDateKey = punchDate.toISOString().split("T")[0];
+          return punchDateKey === selectedDate;
         });
+      }
 
-        const punchesWithStatus = punches.map((punch: any) => {
-          const punchData = punch.dataValues || punch;
-          const punchDate = new Date(
-            punchData.punch_in_time || punchData.created_at
-          );
-          const dateKey = punchDate.toISOString().split("T")[0];
-          const dateStatus = dateStatusMap.get(dateKey);
+      const dateStatusMap = new Map<
+        string,
+        { status: string; isLate: boolean }
+      >();
 
-          return {
-            ...punchData,
-            status: dateStatus?.status || "absent",
-            isLate: dateStatus?.isLate || false,
-          };
-        });
+      punches.forEach((punch: any) => {
+        const punchData = punch.dataValues || punch;
+        const punchDate = new Date(
+          punchData.punch_in_time || punchData.created_at
+        );
+        const dateKey = punchDate.toISOString().split("T")[0];
+
+        if (punchData.type === "IN") {
+          const hour = punchDate.getHours();
+          const minutes = punchDate.getMinutes();
+
+          const isLate =
+            hour > expectedStartTime ||
+            (hour === expectedStartTime && minutes > 0);
+
+          dateStatusMap.set(dateKey, {
+            status: "present",
+            isLate,
+          });
+        }
+      });
+
+      const punchesWithStatus = punches.map((punch: any) => {
+        const punchData = punch.dataValues || punch;
+        const punchDate = new Date(
+          punchData.punch_in_time || punchData.created_at
+        );
+        const dateKey = punchDate.toISOString().split("T")[0];
+        const dateStatus = dateStatusMap.get(dateKey);
 
         return {
-          ...emp?.dataValues,
-          punches: punchesWithStatus,
+          ...punchData,
+          status: dateStatus?.status || "absent",
+          isLate: dateStatus?.isLate || false,
         };
-      })
-    );
+      });
 
-    return employeesDetailed;
-  }
+      return {
+        ...emp?.dataValues,
+        punches: punchesWithStatus,
+      };
+    })
+  );
+
+  return employeesDetailed;
+}
 
   async updateEmployee(employeeId: string, adminId: string, payload: any) {
     const employee = await this.repo.findById(employeeId);

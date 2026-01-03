@@ -4,6 +4,7 @@ import cors from "@fastify/cors";
 dotenv.config();
 import routes from "./routes";
 import { checkDatabaseConnection, sequelize } from "./plugins/sequelize";
+import NotificationService from "./services/notification.service";
 
 const server = Fastify({ logger: true });
 
@@ -11,7 +12,7 @@ const start = async () => {
   try {
     await server.register(cors, {
       origin: "*",
-      methods: ["GET", "POST", "PUT", "DELETE"],
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
       allowedHeaders: ["Content-Type", "Authorization","token"],
     });
     await server.register(routes);
@@ -20,6 +21,11 @@ const start = async () => {
 
     await sequelize.sync({});
     const dbStatus: any = await checkDatabaseConnection();
+
+    // Initialize Firebase Admin SDK for push notifications
+    const notificationService = new NotificationService();
+    notificationService.initializeFirebase();
+    server.log.info("Firebase Admin SDK initialized");
 
     if (!dbStatus.connected) {
       throw new Error(dbStatus.message || "Database connection failed");

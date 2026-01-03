@@ -108,7 +108,6 @@ class LeaveService {
           }
         );
       } catch (error: any) {
-        // Log error but don't break the leave decision
         console.error("Error sending leave decision notification:", error.message);
       }
     }

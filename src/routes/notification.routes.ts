@@ -28,14 +28,14 @@ export async function notificationRoutes(fastify: FastifyInstance) {
   );
 
   // Mark a notification as read
-  fastify.patch(
+  fastify.put(
     "/user/notifications/:id/read",
     { preHandler: decodeToken },
     NotificationController.markAsRead
   );
 
   // Mark all notifications as read for authenticated user
-  fastify.patch(
+  fastify.put(
     "/user/notifications/read-all",
     { preHandler: decodeToken },
     NotificationController.markAllAsRead
